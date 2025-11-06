@@ -1,53 +1,72 @@
 import 'package:flutter/material.dart';
-import 'user_list_screen.dart';
-import 'user_detail_screen.dart';
-import 'create_user_screen.dart';
+import 'package:flutter_application_1/bloc/todo_cubit.dart';
+import 'package:flutter_application_1/bloc/todo_state.dart';
+import 'package:flutter_application_1/models/todo_model.dart';
+import 'package:flutter_application_1/presentation/widgets/todo_item.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
-/// Home Screen với Bottom Navigation Bar
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = const [
-    UserListScreen(),
-    UserDetailScreen(),
-    CreateUserScreen(),
-  ];
-
+class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Users',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Detail',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Create',
+      appBar: AppBar(
+        title: Text('Todo List'),
+        actions: [
+          PopupMenuButton<DataSource>(
+            itemBuilder: (context) => [
+              PopupMenuItem(value: DataSource.local, child: Text('Load Local')),
+              PopupMenuItem(
+                value: DataSource.remote,
+                child: Text('Load remote'),
+              ),
+            ],
+            onSelected: (source) {
+              context.read<TodoCubit>().loadTodos(source);
+            },
           ),
         ],
+      ),
+      body: BlocBuilder<TodoCubit, TodoState>(
+        builder: (context, state) {
+          if (state is TodoInitial) {
+            return Center(child: Text('Select data source from menu'));
+          }
+          if (state is TodoLoading) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (state is TodoError) {
+            return Center(child: Text('Error: ${state.message}'));
+          }
+          if (state is TodoLoaded) {
+            return Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text(
+                    'Source',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: state.todos.length,
+                    itemBuilder: (context, index) {
+                      return TodoItem(todo: state.todos[index], onToggle: (){
+                        context.read<TodoCubit>().toggleTodo(state.todos[index].id);
+                      });
+                    },
+                  ),
+                ),
+              ],
+            );
+          }
+          return Container();
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.go('/add'),
+        child: Icon(Icons.add),
       ),
     );
   }
