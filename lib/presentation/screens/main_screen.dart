@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../config/app_routes.dart';
 
 class MainScreen extends StatelessWidget {
   final Widget child;
@@ -33,22 +34,22 @@ class MainScreen extends StatelessWidget {
 
   int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.path;
-    if (location.startsWith('/home')) return 0;
-    if (location.startsWith('/statistics')) return 1;
-    if (location.startsWith('/profile')) return 2;
+    if (location.startsWith(AppRoutes.home)) return 0;
+    if (location.startsWith(AppRoutes.statistics)) return 1;
+    if (location.startsWith(AppRoutes.profile)) return 2;
     return 0;
   }
 
   void _onItemTapped(int index, BuildContext context) {
     switch (index) {
       case 0:
-        context.go('/home');
+        context.go(AppRoutes.home);
         break;
       case 1:
-        context.go('/statistics');
+        context.go(AppRoutes.statistics);
         break;
       case 2:
-        context.go('/profile');
+        context.go(AppRoutes.profile);
         break;
     }
   }

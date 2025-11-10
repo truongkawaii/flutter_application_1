@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/config/app_routes.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../bloc/task_cubit.dart';
@@ -184,8 +185,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             return TaskCard(
                               task: filteredTasks[index],
                               onTap: () {
+                                // OLD: context.push('/task/${filteredTasks[index].id}');
+                                // NEW:
                                 context.push(
-                                  '/task/${filteredTasks[index].id}',
+                                  AppRoutes.taskDetailRoute(
+                                    filteredTasks[index].id,
+                                  ),
                                 );
                               },
                               onToggle: () {

@@ -1,6 +1,7 @@
 import '../../models/task_model.dart';
+import 'task_datasource.dart';
 
-class TaskLocalDataSource {
+class TaskLocalDataSource implements TaskDataSource {
   final List<Task> _localTasks = [
     Task(
       id: '1',
@@ -50,26 +51,36 @@ class TaskLocalDataSource {
     ),
   ];
 
+  @override
   Future<List<Task>> getTasks() async {
     await Future.delayed(Duration(milliseconds: 800));
     return _localTasks;
   }
 
+  @override
   Future<Task> getTaskById(String id) async {
     await Future.delayed(Duration(milliseconds: 500));
     return _localTasks.firstWhere((task) => task.id == id);
   }
 
+  @override
   Future<void> addTask(Task task) async {
     await Future.delayed(Duration(milliseconds: 500));
     _localTasks.add(task);
   }
 
+  @override
   Future<void> updateTask(Task task) async {
     await Future.delayed(Duration(milliseconds: 500));
     final index = _localTasks.indexWhere((t) => t.id == task.id);
     if (index != -1) {
       _localTasks[index] = task;
     }
+  }
+
+  @override
+  Future<void> deleteTask(String id) async {
+    await Future.delayed(Duration(milliseconds: 500));
+    _localTasks.removeWhere((task) => task.id == id);
   }
 }
