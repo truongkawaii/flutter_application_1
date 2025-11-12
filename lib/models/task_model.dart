@@ -2,6 +2,8 @@ enum TaskCategory { work, personal, shopping, health, other }
 
 enum TaskPriority { low, medium, high }
 
+enum DataSource { local, remote }
+
 class Task {
   final String id;
   final String title;
@@ -44,6 +46,38 @@ class Task {
       imageUrl: imageUrl ?? this.imageUrl,
     );
   }
-}
 
-enum DataSource { local, remote }
+  /// Convert Task to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'category': category.name,
+      'priority': priority.name,
+      'dueDate': dueDate.toIso8601String(),
+      'isCompleted': isCompleted,
+      'imageUrl': imageUrl,
+    };
+  }
+
+  /// Create Task from JSON
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+      category: TaskCategory.values.firstWhere(
+        (e) => e.name == json['category'],
+        orElse: () => TaskCategory.other,
+      ),
+      priority: TaskPriority.values.firstWhere(
+        (e) => e.name == json['priority'],
+        orElse: () => TaskPriority.medium,
+      ),
+      dueDate: DateTime.parse(json['dueDate'] as String),
+      isCompleted: json['isCompleted'] as bool? ?? false,
+      imageUrl: json['imageUrl'] as String?,
+    );
+  }
+}

@@ -6,9 +6,9 @@ import '../presentation/screens/home_screen.dart';
 import '../presentation/screens/statistics_screen.dart';
 import '../presentation/screens/profile_screen.dart';
 import '../presentation/screens/task_detail_screen.dart';
+import '../presentation/screens/create_task_screen.dart'; // NEW
 
 class AppRouter {
-  // Private constructor
   AppRouter._();
 
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -55,8 +55,13 @@ class AppRouter {
           return TaskDetailScreen(taskId: taskId);
         },
       ),
+      // NEW: Create Task Route
+      GoRoute(
+        path: AppRoutes.createTask,
+        name: AppRoutes.createTaskName,
+        builder: (context, state) => CreateTaskScreen(),
+      ),
     ],
-    // Error handler
     errorBuilder: (context, state) => Scaffold(
       body: Center(
         child: Column(

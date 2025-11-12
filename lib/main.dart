@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => TaskCubit(
-        TaskRepository.create(), // Chỉ truyền 1 repository với factory constructor
+        TaskRepository.create(),
       ),
       child: MaterialApp.router(
         title: 'Task Manager',

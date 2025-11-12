@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/config/app_routes.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../bloc/task_cubit.dart';
 import '../../bloc/task_state.dart';
 import '../../models/task_model.dart';
 import '../../config/app_theme.dart';
+import '../../config/app_routes.dart';
 import '../widgets/task_card.dart';
-import '../widgets/category_chip.dart';
+import '../widgets/category_filter.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -21,6 +21,20 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     context.read<TaskCubit>().loadTasks(DataSource.local);
+  }
+
+  // Filter tasks based on selected category
+  List<Task> _getFilteredTasks(List<Task> allTasks) {
+    if (_selectedCategory == null) {
+      return allTasks;
+    }
+    return allTasks.where((task) => task.category == _selectedCategory).toList();
+  }
+
+  void _onCategoryChanged(TaskCategory? category) {
+    setState(() {
+      _selectedCategory = category;
+    });
   }
 
   @override
@@ -85,44 +99,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(Icons.error_outline, size: 64, color: Colors.red),
                   SizedBox(height: 16),
                   Text('Error: ${state.message}'),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<TaskCubit>().loadTasks(DataSource.local);
+                    },
+                    child: Text('Retry'),
+                  ),
                 ],
               ),
             );
           }
 
           if (state is TaskLoaded) {
-            final filteredTasks = _selectedCategory == null
-                ? state.tasks
-                : state.tasks
-                      .where((t) => t.category == _selectedCategory)
-                      .toList();
+            final allTasks = state.tasks;
+            final filteredTasks = _getFilteredTasks(allTasks);
 
             return Column(
               children: [
-                // Category Filter
-                Container(
-                  height: 60,
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    children: [
-                      CategoryChip(
-                        label: 'All',
-                        isSelected: _selectedCategory == null,
-                        onTap: () => setState(() => _selectedCategory = null),
-                      ),
-                      ...TaskCategory.values.map(
-                        (category) => CategoryChip(
-                          label: category.name.toUpperCase(),
-                          color: AppTheme.categoryColors[category]!,
-                          isSelected: _selectedCategory == category,
-                          onTap: () =>
-                              setState(() => _selectedCategory = category),
-                        ),
-                      ),
-                    ],
-                  ),
+                // Category Filter Component
+                CategoryFilter(
+                  selectedCategory: _selectedCategory,
+                  onCategoryChanged: _onCategoryChanged,
                 ),
 
                 // Data Source Indicator
@@ -148,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       Spacer(),
                       Text(
-                        '${filteredTasks.length} tasks',
+                        '${filteredTasks.length} of ${allTasks.length} tasks',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondary,
@@ -160,55 +158,91 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Task List
                 Expanded(
-                  child: filteredTasks.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.inbox_rounded,
-                                size: 64,
-                                color: Colors.grey,
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                'No tasks found',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: EdgeInsets.all(16),
-                          itemCount: filteredTasks.length,
-                          itemBuilder: (context, index) {
-                            return TaskCard(
-                              task: filteredTasks[index],
-                              onTap: () {
-                                // OLD: context.push('/task/${filteredTasks[index].id}');
-                                // NEW:
-                                context.push(
-                                  AppRoutes.taskDetailRoute(
-                                    filteredTasks[index].id,
-                                  ),
-                                );
-                              },
-                              onToggle: () {
-                                context.read<TaskCubit>().toggleTask(
-                                  filteredTasks[index].id,
-                                );
-                              },
-                            );
-                          },
-                        ),
+                  child: _buildTaskList(filteredTasks),
                 ),
               ],
             );
           }
 
-          return Center(child: Text('Start by loading tasks'));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.inbox_rounded, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'Start by loading tasks',
+                  style: TextStyle(color: Colors.grey),
+                ),
+                SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    context.read<TaskCubit>().loadTasks(DataSource.local);
+                  },
+                  icon: Icon(Icons.storage),
+                  label: Text('Load Local Tasks'),
+                ),
+              ],
+            ),
+          );
         },
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          context.push(AppRoutes.createTask);
+        },
+        icon: Icon(Icons.add),
+        label: Text('New Task'),
+        backgroundColor: AppTheme.primaryColor,
+      ),
+    );
+  }
+
+  Widget _buildTaskList(List<Task> tasks) {
+    if (tasks.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox_rounded, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              _selectedCategory == null
+                  ? 'No tasks found'
+                  : 'No ${_selectedCategory!.name} tasks',
+              style: TextStyle(color: Colors.grey, fontSize: 16),
+            ),
+            if (_selectedCategory != null) ...[
+              SizedBox(height: 8),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _selectedCategory = null;
+                  });
+                },
+                child: Text('Clear filter'),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.all(16),
+      itemCount: tasks.length,
+      itemBuilder: (context, index) {
+        final task = tasks[index];
+        return TaskCard(
+          task: task,
+          onTap: () {
+            context.push(AppRoutes.taskDetailRoute(task.id));
+          },
+          onToggle: () {
+            context.read<TaskCubit>().toggleTask(task.id);
+          },
+        );
+      },
     );
   }
 }
